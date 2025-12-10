@@ -1,0 +1,11 @@
+config.json
+bin/
+test/
+upx.log
+nativedb
+nativedb.sqlite
+nativedb.sqlite-wal
+nativedb.sqlite-shm
+natives.json
+natives_cfx.json
+natives_github.json

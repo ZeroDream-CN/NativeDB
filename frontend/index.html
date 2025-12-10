@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="author" content="ZeroDream">
+    <meta name="theme-color" content="#202936">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="keywords" content="GTA5, FiveM, Natives, 函数数据库, 在线浏览, 搜索, 查看, 使用说明">
+    <meta name="description" content="ZeroDream NativeDB 是一个在线浏览 GTA5 Natives 函数的数据库，提供函数搜索、查看和使用说明。">
+    <meta name="og:title" content="ZeroDream NativeDB">
+    <meta name="og:description" content="ZeroDream NativeDB 是一个在线浏览 GTA5 Natives 函数的数据库，提供函数搜索、查看和使用说明。">
+    <meta name="og:type" content="website">
+    <meta name="og:url" content="https://ndb.cfx.rs/">
+    <meta name="og:image" content="https://i.zerodream.net/9d998bee7ad3e2a7895578e6918e716e.png">
+    <!-- API BASE 配置，取消注释下方代码可指定 API 服务器地址 -->
+    <!-- <meta name="api-base" content="/"> -->
+    <!-- API BASE 配置 结束 -->
+    <title>ZeroDream NativeDB</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <link rel="stylesheet" href="https://cfdx.zerodream.net/font-awesome-pro-6.6.0/css/all.css">
+    <link rel="stylesheet" href="https://cfdx.zerodream.net/js/sweetalert2/themes/material-ui.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link href="css/app.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-900 text-gray-300 h-screen overflow-hidden flex flex-col">
+    <div class="loading-overlay"></div>
+    <header
+        class="h-12 bg-gray-800 border-b border-gray-700 flex items-center px-4 justify-between shrink-0 z-40 relative">
+        <div class="flex items-center gap-2">
+            <h1 class="font-bold text-lg text-white tracking-tight truncate cursor-pointer hover:text-blue-400"
+                onclick="window.location.href = '/';">ZeroDream NativeDB</h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="text-xs text-gray-500 truncate hidden sm:block" id="status-bar">正在连接到 API...</div>
+            <button id="btn-login" class="text-sm text-gray-400 hover:text-white transition-colors">
+                <i class="fas fa-sign-in-alt"></i> <span>登录</span>
+            </button>
+            <div id="user-info"
+                class="hidden flex items-center gap-2 cursor-pointer hover:bg-gray-700 px-2 py-1 rounded transition-colors">
+                <img id="user-avatar" src="" alt="Avatar" class="w-6 h-6 rounded-full border border-gray-600">
+                <span id="user-name" class="text-sm text-white font-medium max-w-[100px] truncate">User</span>
+            </div>
+        </div>
+    </header>
+    <div class="flex flex-1 overflow-hidden relative">
+        <aside id="detail-view"
+            class="w-full md:w-4/12 flex flex-col border-r border-gray-700 bg-gray-900 fixed inset-0 z-50 md:static transform transition-transform translate-x-full md:translate-x-0 duration-300 ease-in-out">
+            <div class="md:hidden h-12 flex items-center px-4 border-b border-gray-700 bg-gray-800 shrink-0 shadow-sm">
+                <button onclick="closeMobileDetail()"
+                    class="flex items-center text-blue-400 font-medium active:text-blue-300 touch-manipulation">
+                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7">
+                        </path>
+                    </svg>
+                    返回函数列表
+                </button>
+            </div>
+            <div id="detail-container" class="flex-1 overflow-y-auto p-6 hidden">
+                <div class="mb-4">
+                    <h2 id="detail-name" class="text-2xl font-bold text-white break-all mb-2 font-mono select-all">
+                        加载中...</h2>
+                    <div class="flex flex-wrap gap-2 mb-3">
+                        <span id="detail-namespace"
+                            class="px-2 py-0.5 rounded text-xs font-semibold bg-gray-700 text-gray-300 border border-gray-600">...</span>
+                        <span id="detail-apiset"
+                            class="px-2 py-0.5 rounded text-xs font-semibold bg-purple-900 text-purple-200 border border-purple-700">...</span>
+                        <span id="detail-hash"
+                            class="text-blue-400 cursor-pointer hover:text-blue-300 active:opacity-70"
+                            onclick="copyToClipboard(this)">...</span>
+                        <span id="detail-jhash"
+                            class="text-green-400 cursor-pointer hover:text-green-300 active:opacity-70"
+                            onclick="copyToClipboard(this)">...</span>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <h3 class="text-xs uppercase font-bold text-gray-500 mb-2 tracking-wider">结构定义</h3>
+                    <div class="bg-gray-950 p-4 rounded border border-gray-800 overflow-x-auto">
+                        <pre
+                            class="whitespace-pre-wrap break-all"><code id="detail-definition" class="language-cpp">void ...</code></pre>
+                    </div>
+                </div>
+                <div id="detail-params" class="mb-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-xs uppercase font-bold text-gray-500 tracking-wider">参数</h3>
+                        <button id="btn-edit-params" class="hidden text-xs text-blue-400 hover:text-blue-300">
+                            <i class="fas fa-pen"></i> 编辑参数翻译
+                        </button>
+                    </div>
+                    <ul id="detail-params-list" class="list-disc pl-5 space-y-1">
+                        <li class="param-item">
+                            <span class="param-type type-void">void</span>
+                            <span class="param-name">paramName</span>
+                            <span class="param-desc">参数描述</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-xs uppercase font-bold text-gray-500 tracking-wider">介绍</h3>
+                        <button id="btn-edit-trans" class="hidden text-xs text-blue-400 hover:text-blue-300">
+                            <i class="fas fa-pen"></i> 编辑中文翻译
+                        </button>
+                    </div>
+                    <div id="detail-desc-cn"
+                        class="prose prose-invert prose-sm max-w-none text-gray-300 break-words mb-4"></div>
+                    <details class="group">
+                        <summary
+                            class="text-xs text-gray-500 cursor-pointer hover:text-gray-300 list-none flex items-center gap-1 p-1 -ml-1">
+                            <svg class="w-3 h-3 transition-transform group-open:rotate-90" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7">
+                                </path>
+                            </svg>
+                            显示英文介绍
+                        </summary>
+                        <div id="detail-desc-en"
+                            class="prose prose-invert prose-sm max-w-none text-gray-400 break-words mt-2 pl-2 border-l-2 border-gray-700">
+                        </div>
+                    </details>
+                </div>
+                <div class="flex flex-col flex-1 min-h-[200px]">
+                    <div class="flex border-b border-gray-700 mb-0 justify-between items-end">
+                        <div class="flex">
+                            <button onclick="switchTab('example')" id="tab-btn-example"
+                                class="px-4 py-2 text-sm font-medium text-white border-b-2 border-blue-500 focus:outline-none transition-colors">参考代码</button>
+                            <button onclick="switchTab('source')" id="tab-btn-source"
+                                class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-300 focus:outline-none transition-colors border-b-2 border-transparent">底层源码</button>
+                        </div>
+                        <button id="btn-edit-code"
+                            class="hidden px-3 py-2 pr-0 text-xs text-blue-400 hover:text-blue-300">
+                            <i class="fas fa-pen"></i> 编写示例代码
+                        </button>
+                    </div>
+                    <div
+                        class="bg-gray-950 flex-1 border-x border-b border-gray-700 rounded-b p-4 overflow-auto relative">
+                        <div id="tab-content-example" class="block">
+                            <pre><code id="example-code-viewer" class="language-lua">-- 示例代码</code></pre>
+                        </div>
+                        <div id="tab-content-source" class="hidden">
+                            <pre><code id="source-code-viewer" class="language-cpp">// 点击 '底层源码' 查看 C++ 实现</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="empty-state" class="flex-1 flex-col items-center justify-center text-gray-600 hidden md:flex">
+                <svg class="w-16 h-16 mb-4 opacity-50 animate-pulse" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                </svg>
+                <p>选择一个函数以查看详细信息</p>
+            </div>
+        </aside>
+        <main class="w-full md:w-8/12 flex flex-col bg-gray-800">
+            <div class="p-3 border-b border-gray-700 bg-gray-800 sticky top-0 z-10 shadow-md">
+                <div class="flex gap-2 mb-2">
+                    <div class="relative flex-1">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </span>
+                        <input type="text" id="search-input"
+                            class="w-full bg-gray-900 text-white border border-gray-700 rounded pl-9 pr-2 py-1.5 text-sm focus:outline-none focus:border-blue-500 placeholder-gray-600 appearance-none"
+                            placeholder="搜索函数..." autocomplete="new-password">
+                    </div>
+                    <select id="filter-apiset"
+                        class="hidden sm:block bg-gray-900 text-gray-300 border border-gray-700 rounded px-3 py-1.5 text-sm focus:outline-none">
+                        <option value="all">所有函数</option>
+                        <option value="client">客户端函数</option>
+                        <option value="server">服务器函数</option>
+                        <option value="shared">共享函数</option>
+                    </select>
+                    <select id="filter-namespace"
+                        class="bg-gray-900 text-gray-300 border border-gray-700 rounded px-3 py-1.5 text-sm focus:outline-none w-28 sm:w-auto max-w-[150px]">
+                        <option value="all">所有命名空间</option>
+                    </select>
+                </div>
+            </div>
+            <div id="natives-list" class="flex-1 overflow-y-auto relative overscroll-contain">
+                <div class="p-10 text-center text-gray-500 flex flex-col items-center">
+                    <div class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-2">
+                    </div>
+                    正在加载中，请稍候...
+                </div>
+            </div>
+        </main>
+    </div>
+    <div id="modal-login" class="modal-overlay hidden">
+        <div class="modal-content bg-gray-800 border border-gray-600 rounded-lg p-6 w-96 shadow-xl">
+            <h3 class="text-xl font-bold text-white mb-4">用户登录</h3>
+            <div class="mb-4">
+                <label class="block text-sm text-gray-400 mb-1">用户名</label>
+                <input type="text" id="input-username"
+                    class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                    placeholder="Username">
+            </div>
+            <div class="mb-6">
+                <label class="block text-sm text-gray-400 mb-1">密码</label>
+                <input type="password" id="input-password"
+                    class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                    placeholder="Password">
+            </div>
+            <div class="flex justify-end gap-2">
+                <button onclick="$('#modal-login').addClass('hidden')"
+                    class="px-4 py-2 text-gray-400 hover:text-white">取消</button>
+                <button id="btn-submit-login"
+                    class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">登录</button>
+            </div>
+        </div>
+    </div>
+    <div id="modal-user" class="modal-overlay hidden">
+        <div class="modal-content bg-gray-800 border border-gray-600 rounded-lg p-6 w-96 shadow-xl text-center">
+            <h3 class="text-xl font-bold text-white mb-6">个人信息</h3>
+            <div class="flex justify-center mb-4">
+                <img id="profile-avatar" src="" alt="Avatar"
+                    class="w-24 h-24 rounded-full border-4 border-gray-700 shadow-lg">
+            </div>
+            <h4 id="profile-name" class="text-lg font-bold text-white mb-1">User</h4>
+            <p id="profile-email" class="text-sm text-gray-500 mb-6">user@example.com</p>
+
+            <div class="flex flex-col gap-2">
+                <button id="btn-change-pass"
+                    class="w-full px-4 py-2 bg-blue-600/20 text-blue-400 border border-blue-900/50 rounded hover:bg-blue-600/30 hover:text-blue-300 transition-colors">
+                    <i class="fas fa-key mr-2"></i>修改密码
+                </button>
+                <button onclick="logout()"
+                    class="w-full px-4 py-2 bg-red-600/20 text-red-400 border border-red-900/50 rounded hover:bg-red-600/30 hover:text-red-300 transition-colors">
+                    <i class="fas fa-sign-out-alt mr-2"></i>退出登录
+                </button>
+                <button onclick="$('#modal-user').addClass('hidden')"
+                    class="w-full px-4 py-2 text-gray-400 hover:text-white">
+                    关闭
+                </button>
+            </div>
+        </div>
+    </div>
+    <div id="modal-change-pass" class="modal-overlay hidden">
+        <div class="modal-content bg-gray-800 border border-gray-600 rounded-lg p-6 w-96 shadow-xl">
+            <h3 class="text-xl font-bold text-white mb-4">修改密码</h3>
+            <div class="mb-4">
+                <label class="block text-sm text-gray-400 mb-1">当前密码</label>
+                <input type="password" id="input-old-pass"
+                    class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500">
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm text-gray-400 mb-1">新密码</label>
+                <input type="password" id="input-new-pass"
+                    class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500">
+            </div>
+            <div class="mb-6">
+                <label class="block text-sm text-gray-400 mb-1">确认新密码</label>
+                <input type="password" id="input-confirm-pass"
+                    class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500">
+            </div>
+            <div class="flex justify-end gap-2">
+                <button onclick="$('#modal-change-pass').addClass('hidden')"
+                    class="px-4 py-2 text-gray-400 hover:text-white">取消</button>
+                <button id="btn-submit-change-pass"
+                    class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">提交修改</button>
+            </div>
+        </div>
+    </div>
+    <div id="modal-trans" class="modal-overlay hidden">
+        <div
+            class="modal-content bg-gray-800 border border-gray-600 rounded-lg p-6 w-full max-w-4xl shadow-xl flex flex-col max-h-[90vh]">
+            <h3 class="text-xl font-bold text-white mb-4">编辑中文翻译</h3>
+            <p class="text-sm text-gray-500 mb-2">支持 Markdown 语法</p>
+            <div id="editor-trans-cn"
+                class="monaco-editor-container w-full h-[50vh] mb-4 border border-gray-700 rounded"></div>
+            <div class="flex justify-end gap-2">
+                <button onclick="$('#modal-trans').addClass('hidden')"
+                    class="px-4 py-2 text-gray-400 hover:text-white">取消</button>
+                <button id="btn-submit-trans"
+                    class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">保存翻译</button>
+            </div>
+        </div>
+    </div>
+    <div id="modal-code" class="modal-overlay hidden">
+        <div
+            class="modal-content bg-gray-800 border border-gray-600 rounded-lg p-6 w-full max-w-5xl shadow-xl flex flex-col max-h-[90vh]">
+            <h3 class="text-xl font-bold text-white mb-4">编写参考代码</h3>
+            <div class="mb-4">
+                <label class="block text-sm text-gray-400 mb-1">编程语言</label>
+                <select id="input-code-lang"
+                    class="bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500">
+                    <option value="lua">Lua</option>
+                    <option value="c#">C#</option>
+                    <option value="javascript">JavaScript</option>
+                </select>
+            </div>
+            <div id="editor-code-content"
+                class="monaco-editor-container w-full h-[50vh] mb-4 border border-gray-700 rounded"></div>
+            <div class="flex justify-end gap-2">
+                <button onclick="$('#modal-code').addClass('hidden')"
+                    class="px-4 py-2 text-gray-400 hover:text-white">取消</button>
+                <button id="btn-submit-code"
+                    class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">提交代码</button>
+            </div>
+        </div>
+    </div>
+    <div id="modal-params" class="modal-overlay hidden">
+        <div
+            class="modal-content bg-gray-800 border border-gray-600 rounded-lg p-6 w-full max-w-3xl shadow-xl max-h-[90vh] flex flex-col">
+            <h3 class="text-xl font-bold text-white mb-4 flex-shrink-0">编辑参数翻译</h3>
+            <p class="text-sm text-gray-500 mb-2 flex-shrink-0">请为下方参数填写中文描述</p>
+            <div id="params-edit-container" class="flex-1 overflow-y-auto pr-2 space-y-4 mb-4"></div>
+            <div class="flex justify-end gap-2 flex-shrink-0 pt-4 border-t border-gray-700">
+                <button onclick="$('#modal-params').addClass('hidden')"
+                    class="px-4 py-2 text-gray-400 hover:text-white">取消</button>
+                <button id="btn-submit-params"
+                    class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">保存参数</button>
+            </div>
+        </div>
+    </div>
+    <script src="https://cfdx.zerodream.net/js/jquery.min.js"></script>
+    <script src="https://cfdx.zerodream.net/js/marked/marked.min.js"></script>
+    <script src="https://cfdx.zerodream.net/js/sweetalert2/sweetalert2.all.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-clike.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-lua.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.7/beautify.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+    <script src="js/main.min.js"></script>
+</body>
+
+</html>
