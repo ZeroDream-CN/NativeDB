@@ -5,7 +5,7 @@
     <br />
     <br />
     ·&nbsp;
-    <a href="https://rdb.cfx.rs/"><strong>🌍 在线体验</strong></a>
+    <a href="https://ndb.cfx.rs/"><strong>🌍 在线体验</strong></a>
     &nbsp;·&nbsp;
     <a href="https://github.com/ZeroDream-CN/NativeDB/issues">❔ 反馈问题</a>
     &nbsp;·&nbsp;
@@ -168,3 +168,4 @@ NativeDB 程序内置了多个 CLI 命令用于管理和维护系统。
 ## 开源协议
 
 本项目采用 [MIT License](LICENSE) 开源。
+
