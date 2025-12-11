@@ -185,6 +185,10 @@ pre.whitespace-pre-wrap code {
     background-color: transparent !important;
 }
 
+.swal2-html-container {
+    color: #e5e7eb !important;
+}
+
 .monaco-editor-container {
     overflow: hidden;
     position: relative;
