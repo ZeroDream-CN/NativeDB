@@ -21,6 +21,7 @@ const (
 
 type NativeDoc struct {
 	Name        string          `json:"name"`
+	NameSP      string          `json:"-"`
 	JHash       string          `json:"jhash"`
 	Comment     string          `json:"comment"`
 	Params      []NativeParam   `json:"params"`
@@ -177,11 +178,10 @@ func runImportNative(filePath, downloadURL, defaultGame string, usePatch bool) e
 	for namespace, natives := range data {
 		for hash, doc := range natives {
 			if patch, found := patchMap[hash]; found {
-				if doc.Name == "" || strings.HasPrefix(doc.Name, "_0x") {
-					if patch.Name != "" && !strings.HasPrefix(patch.Name, "_0x") {
-						doc.Name = patch.Name
-					}
+				if patch.Name != "" && !strings.HasPrefix(patch.Name, "_0x") {
+					doc.NameSP = patch.Name
 				}
+
 				if doc.Description == "" && patch.Description != "" {
 					doc.Description = patch.Description
 				}
@@ -210,9 +210,9 @@ func runImportNative(filePath, downloadURL, defaultGame string, usePatch bool) e
 
 			if exists == 0 {
 				_, err := core.DB.Exec(`
-					INSERT INTO natives (hash, jhash, name, namespace, params, return_type, description_original, apiset, game, build_number)
-					VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-				`, hash, doc.JHash, doc.Name, namespace, finalParamsJSON, doc.Results, doc.Description, doc.Apiset, doc.Game, buildNum)
+					INSERT INTO natives (hash, jhash, name, name_sp, namespace, params, return_type, description_original, apiset, game, build_number)
+					VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				`, hash, doc.JHash, doc.Name, doc.NameSP, namespace, finalParamsJSON, doc.Results, doc.Description, doc.Apiset, doc.Game, buildNum)
 				if err != nil {
 					log.Printf("Insert error %s: %v", hash, err)
 				}
@@ -220,12 +220,12 @@ func runImportNative(filePath, downloadURL, defaultGame string, usePatch bool) e
 			} else {
 				var updateSQL string
 				if core.Config.DbType == "sqlite" {
-					updateSQL = `UPDATE natives SET jhash=?, name=?, namespace=?, params=?, return_type=?, description_original=?, apiset=?, game=?, build_number=?, updated_at=CURRENT_TIMESTAMP WHERE hash=?`
+					updateSQL = `UPDATE natives SET jhash=?, name=?, name_sp=?, namespace=?, params=?, return_type=?, description_original=?, apiset=?, game=?, build_number=?, updated_at=CURRENT_TIMESTAMP WHERE hash=?`
 				} else {
-					updateSQL = `UPDATE natives SET jhash=?, name=?, namespace=?, params=?, return_type=?, description_original=?, apiset=?, game=?, build_number=?, updated_at=NOW() WHERE hash=?`
+					updateSQL = `UPDATE natives SET jhash=?, name=?, name_sp=?, namespace=?, params=?, return_type=?, description_original=?, apiset=?, game=?, build_number=?, updated_at=NOW() WHERE hash=?`
 				}
 
-				_, err := core.DB.Exec(updateSQL, doc.JHash, doc.Name, namespace, finalParamsJSON, doc.Results, doc.Description, doc.Apiset, doc.Game, buildNum, hash)
+				_, err := core.DB.Exec(updateSQL, doc.JHash, doc.Name, doc.NameSP, namespace, finalParamsJSON, doc.Results, doc.Description, doc.Apiset, doc.Game, buildNum, hash)
 				if err != nil {
 					log.Printf("Update error %s: %v", hash, err)
 				}

@@ -36,6 +36,7 @@ type NativeListResponse struct {
 	Hash             string          `json:"hash"`
 	JHash            *string         `json:"jhash"`
 	Name             string          `json:"name"`
+	NameSP           string          `json:"name_sp"`
 	Namespace        string          `json:"namespace"`
 	ApiSet           string          `json:"apiset"`
 	ReturnType       string          `json:"return_type"`

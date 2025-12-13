@@ -212,7 +212,7 @@ func GetNativesList(c *gin.Context) {
 
 	query := `
 		SELECT 
-			n.hash, n.jhash, n.name, n.namespace, n.apiset, n.return_type, n.params, n.build_number,
+			n.hash, n.jhash, n.name, n.name_sp, n.namespace, n.apiset, n.return_type, n.params, n.build_number,
 			(ns.native_hash IS NOT NULL) AS source_available,
 			(ne.native_hash IS NOT NULL) AS example_available
 		FROM natives n
@@ -231,7 +231,7 @@ func GetNativesList(c *gin.Context) {
 	for rows.Next() {
 		var n models.NativeListResponse
 		var paramsJSON []byte
-		if err := rows.Scan(&n.Hash, &n.JHash, &n.Name, &n.Namespace, &n.ApiSet, &n.ReturnType, &paramsJSON, &n.Build, &n.SourceAvailable, &n.ExampleAvailable); err != nil {
+		if err := rows.Scan(&n.Hash, &n.JHash, &n.Name, &n.NameSP, &n.Namespace, &n.ApiSet, &n.ReturnType, &paramsJSON, &n.Build, &n.SourceAvailable, &n.ExampleAvailable); err != nil {
 			continue
 		}
 		n.Params = json.RawMessage(paramsJSON)
@@ -255,10 +255,10 @@ func GetNativeDetail(c *gin.Context) {
 		return
 	}
 
-	query := `SELECT hash, jhash, name, namespace, apiset, return_type, params, build_number, description_original, description_cn FROM natives WHERE hash = ?`
+	query := `SELECT hash, jhash, name, name_sp, namespace, apiset, return_type, params, build_number, description_original, description_cn FROM natives WHERE hash = ?`
 	var n models.NativeDetailResponse
 	var paramsJSON []byte
-	err := core.DB.QueryRow(query, hash).Scan(&n.Hash, &n.JHash, &n.Name, &n.Namespace, &n.ApiSet, &n.ReturnType, &paramsJSON, &n.Build, &n.DescriptionOriginal, &n.DescriptionCn)
+	err := core.DB.QueryRow(query, hash).Scan(&n.Hash, &n.JHash, &n.Name, &n.NameSP, &n.Namespace, &n.ApiSet, &n.ReturnType, &paramsJSON, &n.Build, &n.DescriptionOriginal, &n.DescriptionCn)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Native not found"})
 		return
@@ -290,7 +290,7 @@ func GetNativeSource(c *gin.Context) {
 			WHEN 'game_reversed' THEN 1 
 			WHEN 'cfx_open_source' THEN 2 
 			ELSE 3 
-		END 
+		END DESC
 		LIMIT 1
 	`
 	var s models.SourceCodeResponse

@@ -221,6 +221,7 @@ func createTables(dbType string) {
 				hash TEXT PRIMARY KEY,
 				jhash TEXT,
 				name TEXT,
+				name_sp TEXT DEFAULT '', 
 				namespace TEXT NOT NULL,
 				params TEXT,
 				return_type TEXT DEFAULT 'void',
@@ -277,6 +278,7 @@ func createTables(dbType string) {
 				hash char(18) NOT NULL,
 				jhash varchar(20) DEFAULT NULL,
 				name varchar(100) DEFAULT NULL,
+				name_sp varchar(100) DEFAULT '' COMMENT 'Single Player Name (Alloc8or)',
 				namespace varchar(50) NOT NULL,
 				params longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
 				return_type varchar(100) DEFAULT 'void',
@@ -336,6 +338,32 @@ func createTables(dbType string) {
 	for _, sqlStmt := range tables {
 		if _, err := DB.Exec(sqlStmt); err != nil {
 			log.Printf("Warning: Failed to ensure table exists. Error: %v", err)
+		}
+	}
+
+	autoMigrate(dbType)
+}
+
+func autoMigrate(dbType string) {
+	fmt.Println("Checking database schema...")
+
+	if dbType == "sqlite" {
+		_, err := DB.Exec("ALTER TABLE natives ADD COLUMN name_sp TEXT DEFAULT '';")
+		if err == nil {
+			fmt.Println("Migrated: Added 'name_sp' column to 'natives' table (SQLite).")
+		}
+	} else {
+		// MySQL 检查列是否存在
+		var dummy string
+		err := DB.QueryRow("SELECT name_sp FROM natives LIMIT 1").Scan(&dummy)
+		if err != nil {
+			// 列不存在，添加
+			_, err := DB.Exec("ALTER TABLE natives ADD COLUMN name_sp varchar(100) DEFAULT '' AFTER name;")
+			if err != nil {
+				log.Printf("Migration failed: %v", err)
+			} else {
+				fmt.Println("Migrated: Added 'name_sp' column to 'natives' table (MySQL).")
+			}
 		}
 	}
 }
