@@ -14,6 +14,13 @@
     <a href="README_zh.md">📃 中文文档</a>
     &nbsp;·
   </p>
+  <br>
+
+  [![Download](https://img.shields.io/github/v/release/ZeroDream-CN/NativeDB?label=Download&style=for-the-badge&logo=github)](https://github.com/ZeroDream-CN/NativeDB/releases/latest)
+  [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
+  [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-blue?style=for-the-badge)](https://github.com/ZeroDream-CN/NativeDB)
+  [![Go Version](https://img.shields.io/github/go-mod/go-version/ZeroDream-CN/NativeDB?style=for-the-badge)](go.mod)
+
 </div>
 
 ![preview](https://github.com/user-attachments/assets/493e0f71-a159-495d-8909-0077b11236a7)
@@ -171,3 +178,4 @@ You can click the login button in the upper right corner of the frontend interfa
 ## Open Source License
 
 This project is open-sourced under the [MIT License](LICENSE).
+
