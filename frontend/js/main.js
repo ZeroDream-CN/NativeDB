@@ -713,6 +713,7 @@ function mapCSharpType(type) {
     if (t === 'entity') m = 'int /* Entity */';
     if (t === 'ped') m = 'int /* Ped */';
     if (t === 'vehicle') m = 'int /* Vehicle */';
+    if (t === 'player') m = 'int /* Player */';
     if (t === 'object') m = 'int /* Object */';
     if (t === 'any') m = 'Any';
     if (type.includes('*')) m = `ref ${m}`;
@@ -732,6 +733,7 @@ function mapLuaType(type, ignoreRef) {
     if (t === 'entity') return 'Entity';
     if (t === 'ped') return 'Ped';
     if (t === 'vehicle') return 'Vehicle';
+    if (t === 'player') return 'Player';
     if (t === 'object') return 'Object';
     if (t === 'any') return 'Any';
     return type; 
@@ -750,6 +752,7 @@ function mapJavascriptType(type, ignoreRef) {
     if (t === 'entity') return 'Entity';
     if (t === 'ped') return 'Ped';
     if (t === 'vehicle') return 'Vehicle';
+    if (t === 'player') return 'Player';
     if (t === 'object') return 'Object';
     if (t === 'any') return 'Any';
     return type; 
