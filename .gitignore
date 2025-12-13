@@ -9,3 +9,4 @@ nativedb.sqlite-shm
 natives.json
 natives_cfx.json
 natives_github.json
+release.sh
