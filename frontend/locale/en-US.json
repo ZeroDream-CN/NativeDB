@@ -48,7 +48,7 @@
     "settings.theme.purple": "Purple",
     "settings.theme.grey": "Grey",
     "settings.highlight": "Syntax Highlighting",
-    "settings.locale": "Language",
+    "settings.locale": "UI Language",
     "settings.btn.close": "Close",
     "settings.btn.save": "Save & Apply",
 
@@ -76,7 +76,7 @@
     "edit.trans.cancel": "Cancel",
 
     "edit.code.title": "Edit Example Code",
-    "edit.code.lang": "Language",
+    "edit.code.lang": "UI Language",
     "edit.code.save": "Submit",
     "edit.code.cancel": "Cancel",
 

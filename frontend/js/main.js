@@ -53,6 +53,15 @@ $(document).ready(function () {
     });
     $('#filter-apiset, #filter-namespace').on('change', filterData);
 
+    $('#quick-language').on('change', function () {
+        userSettings.lang = $(this).val();
+        saveSettings();
+        filterData();
+        if (currentNativeHash) {
+            selectNative(currentNativeHash);
+        }
+    });
+
     $('#natives-list').on('scroll', function () {
         const $this = $(this);
         if ($this.scrollTop() + $this.innerHeight() >= $this[0].scrollHeight - 200) {
@@ -169,6 +178,7 @@ $(document).ready(function () {
         userSettings.theme = $('#setting-theme').val();
         userSettings.highlight = $('#setting-highlight').val();
         userSettings.locale = $('#setting-locale').val();
+        $('#quick-language').val(userSettings.lang || 'raw');
 
         saveSettings();
         
@@ -266,6 +276,7 @@ function loadSettings() {
     loadTheme(userSettings.theme || 'blue');
     loadHighlight(userSettings.highlight || 'tomorrow');
     loadLocale(userSettings.locale || 'zh-CN');
+    $('#quick-language').val(userSettings.lang || 'raw');
 }
 
 function saveSettings() {
