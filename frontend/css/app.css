@@ -70,11 +70,16 @@ body {
 .native-row.active {
     background-color: var(--theme-color);
     color: white;
+    text-shadow: 1px 1px 1px #333;
 }
 
 .native-row.active .type-void,
 .native-row.active .type-int,
 .native-row.active .param-name {
+    color: #e5e7eb;
+}
+
+.native-row.active .text-gray-500 {
     color: #e5e7eb;
 }
 

@@ -12,6 +12,8 @@ let   renderQueue           = [];
 let   renderedCount         = 0;
 let   currentThemeColor     = 'blue';
 let   currentThemeBg        = 'gray';
+let   currentLocale         = document.documentElement.lang || navigator.language || 'zh-CN';
+let   loadedLocale          = {}; // 默认为空对象，等待加载
 const BATCH_SIZE            = 100;
 
 // 用户设置
@@ -19,14 +21,25 @@ let userSettings = {
     game: 'fivem', // 'fivem' or 'gta5'
     lang: 'raw',   // 'raw', 'lua', 'c#', 'javascript'
     theme: 'blue', // 'blue', 'red', 'green', 'yellow'
-    highlight: 'tomorrow' // 'tomorrow', 'okaidia', 'twilight'
+    highlight: 'tomorrow', // 'tomorrow', 'okaidia', 'twilight'
+    locale: document.documentElement.lang || navigator.language || 'zh-CN'
 };
+
+// 翻译辅助函数
+function _t(key, params = {}) {
+    let text = loadedLocale[key] || key;
+    // 简单的参数替换 {name}
+    for (const [k, v] of Object.entries(params)) {
+        text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), v);
+    }
+    return text;
+}
 
 $(document).ready(function () {
     marked.use({ gfm: true, breaks: true });
     $('.loading-overlay').fadeOut();
 
-    // 加载设置
+    // 加载设置 (包括 locale)
     loadSettings();
 
     checkLoginStatus();
@@ -145,6 +158,7 @@ $(document).ready(function () {
         $('#setting-lang').val(userSettings.lang);
         $('#setting-theme').val(userSettings.theme);
         $('#setting-highlight').val(userSettings.highlight);
+        $('#setting-locale').val(userSettings.locale);
         $('#modal-settings').removeClass('hidden');
     });
 
@@ -154,11 +168,12 @@ $(document).ready(function () {
         userSettings.lang = $('#setting-lang').val();
         userSettings.theme = $('#setting-theme').val();
         userSettings.highlight = $('#setting-highlight').val();
+        userSettings.locale = $('#setting-locale').val();
 
         saveSettings();
         
         $('#modal-settings').addClass('hidden');
-        sendNotification('success', '设置已保存');
+        sendNotification('success', _t('msg.setting_saved'));
         
         // 重新渲染页面
         filterData(); 
@@ -168,6 +183,7 @@ $(document).ready(function () {
 
         loadTheme(userSettings.theme || 'blue');
         loadHighlight(userSettings.highlight || 'tomorrow');
+        loadLocale(userSettings.locale || 'zh-CN');
     });
 
     // 加载默认文档（如果有的话）
@@ -202,6 +218,44 @@ function loadDefaultDocument(url) {
         .catch(error => console.error('加载默认文档失败:', error));
 }
 
+function loadLocale(locale) {
+    let url = `${window.location.origin}/locale/${locale}.json`;
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            loadedLocale = data;
+            // 遍历所有元素，如果有 translate 属性，就用 locale 对应的文本替换
+            $('[translate]').each((index, element) => {
+                let key = $(element).attr('translate');
+                if (data[key]) {
+                    // 检查是 input 还是普通元素
+                    if ($(element).is('input') || $(element).is('textarea')) {
+                         if ($(element).attr('placeholder')) {
+                             $(element).attr('placeholder', data[key]);
+                         }
+                    } else {
+                        if ($(element).text().trim() !== "") {
+                            $(element).text(data[key]);
+                        }
+                        if ($(element).attr('title')) {
+                            $(element).attr('title', data[key]);
+                        }
+                    }
+                }
+            });
+            // 刷新当前可能需要动态翻译的内容
+            if (currentNativeHash) {
+                // 如果在详情页，刷新一下详情页的文本（如参数无等）
+                const basicInfo = allNatives.find(n => n.hash === currentNativeHash);
+                if (basicInfo) {
+                    selectNative(currentNativeHash);
+                }
+            }
+            filterData(); // 刷新列表中的分组标题等
+        })
+        .catch(error => console.error('加载语言文件失败:', error));
+}
+
 function loadSettings() {
     const saved = localStorage.getItem('ndb_settings');
     if (saved) {
@@ -211,6 +265,7 @@ function loadSettings() {
     }
     loadTheme(userSettings.theme || 'blue');
     loadHighlight(userSettings.highlight || 'tomorrow');
+    loadLocale(userSettings.locale || 'zh-CN');
 }
 
 function saveSettings() {
@@ -221,10 +276,10 @@ function loadTheme(color) {
     if (currentThemeColor == 'zinc' && color != 'zinc') {
         Swal.fire({
             icon: 'warning',
-            title: '注意',
-            text: '从该主题切换到其他主题需要刷新页面才能生效。',
+            title: _t('msg.error'), // 注意：标题可能需要具体化
+            text: _t('msg.theme_change_warn'),
             showCancelButton: false,
-            confirmButtonText: '刷新页面',
+            confirmButtonText: _t('msg.refresh_page'),
         }).then((result) => {
             if (result.isConfirmed) {
                 location.reload();
@@ -408,9 +463,9 @@ async function doLogin() {
     if (!username || !password) {
         Swal.fire({
             icon: 'error',
-            title: '错误',
+            title: _t('msg.error'),
             theme: "material-ui-dark",
-            text: '请输入用户名和密码'
+            text: _t('msg.fill_all')
         });
         return;
     }
@@ -434,21 +489,21 @@ async function doLogin() {
             $('#input-password').val('');
             
             updateAuthUI(true);
-            sendNotification('success', `欢迎回来, ${currentUser.username}`);
+            sendNotification('success', _t('msg.welcome', {username: currentUser.username}));
         } else {
             Swal.fire({
                 icon: 'error',
-                title: '登录失败',
+                title: _t('msg.login_fail'),
                 theme: "material-ui-dark",
-                text: data.error || '用户名或密码错误'
+                text: data.error || _t('msg.user_pass_error')
             });
         }
     } catch (e) {
         Swal.fire({
             icon: 'error',
-            title: '错误',
+            title: _t('msg.error'),
             theme: "material-ui-dark",
-            text: '网络请求出错: ' + e.message
+            text: _t('msg.network_error') + e.message
         });
     }
 }
@@ -459,17 +514,17 @@ async function submitChangePassword() {
     const confirmPass = $('#input-confirm-pass').val();
 
     if (!oldPass || !newPass || !confirmPass) {
-        Swal.fire({ icon: 'error', title: '错误', text: '请填写所有字段' });
+        Swal.fire({ icon: 'error', title: _t('msg.error'), text: _t('msg.fill_all') });
         return;
     }
 
     if (newPass !== confirmPass) {
-        Swal.fire({ icon: 'error', title: '错误', text: '两次输入的新密码不一致' });
+        Swal.fire({ icon: 'error', title: _t('msg.error'), text: _t('msg.pass_mismatch') });
         return;
     }
 
     if (newPass.length < 6) {
-        Swal.fire({ icon: 'error', title: '错误', text: '新密码长度至少需要6位' });
+        Swal.fire({ icon: 'error', title: _t('msg.error'), text: _t('msg.pass_short') });
         return;
     }
 
@@ -482,13 +537,13 @@ async function submitChangePassword() {
 
         const data = await res.json();
         if (res.ok) {
-            Swal.fire({ icon: 'success', title: '成功', text: '密码修改成功' });
+            Swal.fire({ icon: 'success', title: _t('msg.success'), text: _t('msg.pass_success') });
             $('#modal-change-pass').addClass('hidden');
         } else {
-            Swal.fire({ icon: 'error', title: '错误', text: data.error || '修改失败' });
+            Swal.fire({ icon: 'error', title: _t('msg.error'), text: data.error || _t('msg.save_fail') });
         }
     } catch (e) {
-        Swal.fire({ icon: 'error', title: '错误', text: '网络请求失败: ' + e.message });
+        Swal.fire({ icon: 'error', title: _t('msg.error'), text: _t('msg.network_error') + e.message });
     }
 }
 
@@ -520,7 +575,7 @@ async function fetchNatives() {
 
         allNatives = await res.json();
 
-        $('#status-bar').text(`已加载 ${allNatives.length} 个函数`);
+        $('#status-bar').text(_t('msg.loaded_count', {count: allNatives.length}));
         initFilters();
         filterData();
         const hashFromURL = window.location.hash.slice(2);
@@ -528,7 +583,7 @@ async function fetchNatives() {
             selectNative(hashFromURL);
         }
     } catch (err) {
-        $('#natives-list').html(`<div class="p-10 text-center text-red-500">加载函数失败<br>${err.message}</div>`);
+        $('#natives-list').html(`<div class="p-10 text-center text-red-500">${_t('list.load_failed')}<br>${err.message}</div>`);
     }
 }
 
@@ -701,11 +756,11 @@ function renderDetailBasic(n) {
 
     renderParams(n.params);
 
-    $('#detail-desc-cn').html('<span class="text-gray-600 italic">加载中...</span>');
+    $('#detail-desc-cn').html(`<span class="text-gray-600 italic">${_t('msg.loading')}</span>`);
     $('#detail-desc-en').html('');
 
     switchTab('example');
-    $('#source-code-viewer').text("// 点击 '底层源码' 标签以加载函数的底层代码。");
+    $('#source-code-viewer').text(_t('msg.source_click'));
 }
 
 function mapCSharpType(type) {
@@ -811,7 +866,7 @@ function renderParams(params) {
     });
 
     if (params.length === 0) {
-        $('#detail-params-list').html('<li class="text-gray-500 italic">此函数没有参数。</li>');
+        $('#detail-params-list').html(`<li class="text-gray-500 italic">${_t('detail.params.none')}</li>`);
     }
 }
 
@@ -824,7 +879,7 @@ function renderDetailFull(data, hasSource) {
     } else if (data.description_original) {
         $('#detail-desc-cn').html(marked.parse(data.description_original));
     } else {
-        $('#detail-desc-cn').html('<span class="text-gray-600">暂无描述信息。</span>');
+        $('#detail-desc-cn').html(`<span class="text-gray-600">${_t('detail.desc.none')}</span>`);
     }
 
     if (data.description_original) {
@@ -842,9 +897,9 @@ function renderDetailFull(data, hasSource) {
 
     $('#tab-btn-source').attr('data-has-source', hasSource ? 'true' : 'false');
     if (!hasSource) {
-        $('#source-code-viewer').text("-- 数据库中暂无该函数的底层代码。");
+        $('#source-code-viewer').text(_t('msg.source_none'));
     } else {
-        $('#source-code-viewer').text("// 点击 '底层源码' 标签以加载函数的底层代码。");
+        $('#source-code-viewer').text(_t('msg.source_click'));
     }
     
     if (authToken && currentUser) updateAuthUI(true);
@@ -870,12 +925,12 @@ function cleanupCode(sourceCode) {
 
 async function loadSourceCode(hash) {
     const $container = $('#source-code-viewer');
-    $container.text("// 正在加载中，请稍候...");
+    $container.text(_t('msg.source_loading'));
 
     try {
         const res = await fetch(`${API_BASE}/api/native/${hash}/source`);
         if (res.status === 404) {
-            $container.text("// 数据库中暂无该函数的底层代码。");
+            $container.text(_t('msg.source_none'));
             return;
         }
         const data = await res.json();
@@ -884,7 +939,7 @@ async function loadSourceCode(hash) {
         $container.removeClass().addClass(`language-${data.lang}`);
         Prism.highlightElement($container[0]);
     } catch (e) {
-        $container.text("// 加载底层代码时发生错误。");
+        $container.text(_t('msg.source_error'));
     }
 }
 
@@ -892,14 +947,14 @@ async function loadExampleCode(hash) {
     const $container = $('#example-code-viewer');
     const $tabsContainer = $('#example-lang-switches');
     
-    $container.text("// 正在加载中，请稍候...");
+    $container.text(_t('msg.example_loading'));
     $tabsContainer.addClass('hidden').empty();
     currentNativeExamples = {};
 
     try {
         const res = await fetch(`${API_BASE}/api/native/${hash}/example`);
         if (res.status === 404) {
-            $container.text("-- 数据库中暂无该函数的示例代码。");
+            $container.text(_t('msg.example_none'));
             return;
         }
         const data = await res.json();
@@ -936,10 +991,10 @@ async function loadExampleCode(hash) {
 
             showExampleCode(langs[0]);
         } else {
-            $container.text("-- 数据库中暂无该函数的示例代码。");
+            $container.text(_t('msg.example_none'));
         }
     } catch (e) {
-        $container.text("// 加载示例代码时发生错误。");
+        $container.text(_t('msg.example_error'));
         console.error(e);
         currentNativeExamples = {};
     }
@@ -947,7 +1002,7 @@ async function loadExampleCode(hash) {
 
 function showExampleCode(lang) {
     const $container = $('#example-code-viewer');
-    const code = currentNativeExamples[lang] || "-- 无代码";
+    const code = currentNativeExamples[lang] || _t('msg.no_code');
     $container.text(code);
     $container.removeClass().addClass(`language-${lang}`);
     Prism.highlightElement($container[0]);
@@ -977,7 +1032,7 @@ async function submitTranslation() {
         });
 
         if (res.ok) {
-            sendNotification('success', '翻译保存成功！');
+            sendNotification('success', _t('msg.trans_saved'));
             selectNative(currentNativeHash);
             const n = allNatives.find(x => x.hash === currentNativeHash);
             if (n) n.description_cn = content;
@@ -986,12 +1041,12 @@ async function submitTranslation() {
             const err = await res.json();
             Swal.fire({
                 icon: 'error',
-                title: '错误',
-                text: "保存失败: " + (err.error || "未知错误")
+                title: _t('msg.error'),
+                text: _t('msg.save_fail') + (err.error || "未知错误")
             });
         }
     } catch (e) {
-        Swal.fire({icon: 'error', title: '错误', text: "请求失败: " + e.message});
+        Swal.fire({icon: 'error', title: _t('msg.error'), text: _t('msg.req_fail') + e.message});
     }
 }
 
@@ -1012,15 +1067,15 @@ async function submitExample() {
         });
 
         if (res.ok) {
-            sendNotification('success', '示例代码保存成功！');
+            sendNotification('success', _t('msg.code_saved'));
             $('#modal-code').addClass('hidden');
             loadExampleCode(currentNativeHash);
         } else {
             const err = await res.json();
-            Swal.fire({icon: 'error', title: '错误', text: "保存失败: " + err.error});
+            Swal.fire({icon: 'error', title: _t('msg.error'), text: _t('msg.save_fail') + err.error});
         }
     } catch (e) {
-        Swal.fire({icon: 'error', title: '错误', text: "请求失败: " + e.message});
+        Swal.fire({icon: 'error', title: _t('msg.error'), text: _t('msg.req_fail') + e.message});
     }
 }
 
@@ -1029,10 +1084,10 @@ function openParamsEditor() {
     $container.empty();
 
     if (!currentNativeParams || currentNativeParams.length === 0) {
-        $container.html('<div class="text-center text-gray-500 py-4">此函数没有参数，无需翻译。</div>');
+        $container.html(`<div class="text-center text-gray-500 py-4">${_t('edit.params.no_params')}</div>`);
     } else {
         currentNativeParams.forEach((p, index) => {
-            const originalDesc = p.description || "(无原始描述)";
+            const originalDesc = p.description || _t('edit.params.no_desc');
             const val = p.description_cn || "";
 
             const html = `
@@ -1042,12 +1097,12 @@ function openParamsEditor() {
                         <span class="text-white font-mono text-sm font-bold">${p.name}</span>
                     </div>
                     <div class="mb-2 text-xs text-${currentThemeBg}-500 bg-${currentThemeBg}-950 p-2 rounded border border-${currentThemeBg}-800">
-                        <span class="font-bold text-${currentThemeBg}-600 select-none">Original: </span>
+                        <span class="font-bold text-${currentThemeBg}-600 select-none">${_t('edit.params.original')}</span>
                         ${originalDesc}
                     </div>
                     <input type="text" 
                         class="param-input w-full bg-${currentThemeBg}-800 border border-${currentThemeBg}-600 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-${currentThemeColor}-500" 
-                        placeholder="输入中文描述..." 
+                        placeholder="${_t('edit.params.placeholder')}" 
                         data-name="${p.name}" 
                         value="${val.replace(/"/g, '&quot;')}">
                 </div>
@@ -1086,7 +1141,7 @@ async function submitParams() {
         });
 
         if (res.ok) {
-            sendNotification('success', '参数翻译保存成功！');
+            sendNotification('success', _t('msg.params_saved'));
             $('#modal-params').addClass('hidden');
             selectNative(currentNativeHash);
             const n = allNatives.find(x => x.hash === currentNativeHash);
@@ -1098,10 +1153,10 @@ async function submitParams() {
             }
         } else {
             const err = await res.json();
-            Swal.fire({icon: 'error', title: '错误', text: "保存失败: " + err.error});
+            Swal.fire({icon: 'error', title: _t('msg.error'), text: _t('msg.save_fail') + err.error});
         }
     } catch (e) {
-        Swal.fire({icon: 'error', title: '错误', text: "请求失败: " + e.message});
+        Swal.fire({icon: 'error', title: _t('msg.error'), text: _t('msg.req_fail') + e.message});
     }
 }
 
@@ -1148,7 +1203,7 @@ function filterData() {
     renderedCount = 0;
 
     if (renderQueue.length === 0) {
-        $container.html('<div class="p-10 text-center text-gray-500">暂无符合条件的函数。</div>');
+        $container.html(`<div class="p-10 text-center text-gray-500">${_t('list.no_results')}</div>`);
     } else {
         renderNextBatch();
         $container.scrollTop(0);
@@ -1203,10 +1258,10 @@ function renderNextBatch() {
             const isActive = currentNativeHash === native.hash ? 'active' : '';
             let nativeIcons = '';
             if (native.source_available) {
-                nativeIcons += '<i class="fas fa-code text-yellow-400 text-xs ml-1" title="底层源码"></i>';
+                nativeIcons += `<i class="fas fa-code text-yellow-400 text-xs ml-1" title="${_t('detail.tabs.source')}"></i>`;
             }
             if (native.example_available) {
-                nativeIcons += '<i class="fas fa-file-alt text-green-400 text-xs ml-1" title="示例代码"></i>';
+                nativeIcons += `<i class="fas fa-file-alt text-green-400 text-xs ml-1" title="${_t('detail.tabs.example')}"></i>`;
             }
 
             htmlBuffer += `
@@ -1243,7 +1298,7 @@ function switchTab(tab) {
 
         if (currentNativeHash && $('#tab-btn-source').attr('data-has-source') === 'true') {
             const currentText = $('#source-code-viewer').text();
-            if (currentText.startsWith("// 点击")) {
+            if (currentText.startsWith("// ")) { // 简化的检查，因为文本现在是多语言的
                 loadSourceCode(currentNativeHash);
             }
         }
@@ -1272,17 +1327,17 @@ function getApisetColor(apiset) {
 }
 
 function getApisetName(apiset) {
-    if (apiset === 'client') return '客户端';
-    if (apiset === 'server') return '服务器';
-    if (apiset === 'shared') return '共享';
-    return '未知';
+    if (apiset === 'client') return _t('filter.apiset.client');
+    if (apiset === 'server') return _t('filter.apiset.server');
+    if (apiset === 'shared') return _t('filter.apiset.shared');
+    return 'Unknown';
 }
 
 function copyToClipboard(element) {
     const text = $(element).text();
     if (navigator.clipboard) {
         navigator.clipboard.writeText(text).then(() => {
-            $(element).text('已复制！');
+            $(element).text(_t('msg.copy_success'));
             setTimeout(() => $(element).text(text), 1000);
         });
     } else {
@@ -1292,7 +1347,7 @@ function copyToClipboard(element) {
         textarea.select();
         document.execCommand('copy');
         document.body.removeChild(textarea);
-        $(element).text('已复制！');
+        $(element).text(_t('msg.copy_success'));
         setTimeout(() => $(element).text(text), 1000);
     }
 }
