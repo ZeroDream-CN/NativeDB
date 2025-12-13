@@ -207,10 +207,10 @@ function loadSettings() {
     if (saved) {
         try {
             userSettings = { ...userSettings, ...JSON.parse(saved) };
-            loadTheme(userSettings.theme || 'blue');
-            loadHighlight(userSettings.highlight || 'tomorrow');
         } catch(e) {}
     }
+    loadTheme(userSettings.theme || 'blue');
+    loadHighlight(userSettings.highlight || 'tomorrow');
 }
 
 function saveSettings() {
@@ -275,7 +275,15 @@ function loadTheme(color) {
             'purple': '#8a63b0',
             'zinc': '#626262',
         };
+        let themeColorMap = {
+            'gray': '#1f2937',
+            'zinc': '#27272a',
+            'slate': '#1e293b',
+            'neutral': '#262626',
+            'stone': '#292524',
+        };
         $('body').css('--theme-color', colorMap[color]);
+        $('meta[name="theme-color"]').attr('content', themeColorMap[bgColorNames[color]]);
         currentThemeColor = color;
         currentThemeBg = bgColorNames[color];
     }
