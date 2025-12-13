@@ -14,7 +14,7 @@
   </p>
 </div>
 
-![preview](https://github.com/user-attachments/assets/b5a070d5-3725-467b-949e-2f326b478ce7)
+![preview](https://github.com/user-attachments/assets/493e0f71-a159-495d-8909-0077b11236a7)
 
 ## 项目介绍
 
@@ -24,7 +24,7 @@ NativeDB 是一个用于浏览和查询 FiveM / Grand Theft Auto V 原生函数�
 
 ## 主要功能
 
-* 现代化 Web 界面：基于 Tailwind CSS 构建的响应式界面，支持暗色模式，提供流畅的搜索和浏览体验。
+* 现代化 Web 界面：基于 Tailwind CSS 构建的响应式界面，支持自定义主题，提供流畅的搜索和浏览体验。
 * 多用户系统：支持多用户注册与管理，使用 JWT 进行安全鉴权，集成 Gravatar 头像支持。
 * 双数据库支持：
   * MySQL: 适用于生产环境，支持高并发。
@@ -34,7 +34,8 @@ NativeDB 是一个用于浏览和查询 FiveM / Grand Theft Auto V 原生函数�
   * 内存缓存: 当 Redis 未启用时，自动降级为内存缓存，无需额外依赖。
 * 数据导入与补全：
   * 自动从 CFX 官方源下载并导入 natives.json。
-  * 集成 GitHub (alloc8or) 数据源，自动补全缺失的函数名和描述。
+  * 集成 GitHub (alloc8or) 数据源，自动补全缺失的描述。
+  * 前端支持切换 FiveM（Cfx.re）数据源和 alloc8or 单机数据源。
 * 源码关联：
   * 支持导入 C++ 底层源码和 Lua/C#/JS 示例代码。
 * AI 辅助翻译：
@@ -168,4 +169,5 @@ NativeDB 程序内置了多个 CLI 命令用于管理和维护系统。
 ## 开源协议
 
 本项目采用 [MIT License](LICENSE) 开源。
+
 
