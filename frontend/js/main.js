@@ -176,6 +176,18 @@ $(document).ready(function () {
         loadDefaultDocument(defaultDoc);
     }
 
+    setInterval(function() {
+        // 遍历所有链接，如果不是 #、/、./ 或者 ? 开头的，判断是否有 target=_blank，如果没有则添加
+        $('a').each(function() {
+            const href = $(this).attr('href');
+            if (href && !href.startsWith('#') && !href.startsWith('/') && !href.startsWith('./') && !href.startsWith('?')) {
+                if (!$(this).attr('target') || $(this).attr('target') != '_blank') {
+                    $(this).attr('target', '_blank');
+                }
+            }
+        });
+    }, 1000);
+
     // 把页面滚动到顶部
     window.scrollTo(0, 0);
 });
